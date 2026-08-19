@@ -1,0 +1,35 @@
+preprocessing:
+  name: mindsmall_nrms_v1
+  seed: 42
+
+input:
+  train_behaviors: data/raw/MINDsmall_train/behaviors.tsv
+  train_news: data/raw/MINDsmall_train/news.tsv
+  dev_behaviors: data/raw/MINDsmall_dev/behaviors.tsv
+  dev_news: data/raw/MINDsmall_dev/news.tsv
+  glove: data/raw/glove/glove.840B.300d.txt
+
+output:
+  directory: data/processed/mindsmall_nrms_v1
+  overwrite: false
+
+split:
+  validation_ratio: 0.5
+
+text:
+  lowercase: true
+  min_frequency: 1
+  max_title_length: 30
+
+sequence:
+  max_history_length: 50
+
+training:
+  negative_sampling_ratio: 4
+
+embedding:
+  dimension: 300
+  unmatched_init_std: 0.1
+
+logging:
+  level: INFO
