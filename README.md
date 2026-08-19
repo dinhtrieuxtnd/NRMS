@@ -143,9 +143,3 @@ precompute một lần mỗi evaluation pass để tránh encode lặp lại cù
 - `loader.num_workers > 0`: worker được seed để negative sampling tái lập.
 - `scheduler.type`: `none`, `reduce_on_plateau` hoặc `cosine`.
 - `device`: `auto`, `cpu` hoặc `cuda`.
-
-## Kiểm thử
-
-```powershell
-python -m pytest -q
-```
