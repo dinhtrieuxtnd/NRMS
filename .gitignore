@@ -12,7 +12,7 @@ env/
 .idea/
 
 /data
-outputs/
+outputs*/
 *.log
 
 /documents

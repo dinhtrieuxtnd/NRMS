@@ -149,7 +149,3 @@ precompute một lần mỗi evaluation pass để tránh encode lặp lại cù
 ```powershell
 python -m pytest -q
 ```
-
-Chi tiết trạng thái triển khai và các quyết định kỹ thuật nằm trong
-[documents/ROADMAP.md](documents/ROADMAP.md) và
-[documents/NRMS-ban-dich-tieng-viet.md](documents/NRMS-ban-dich-tieng-viet.md).
