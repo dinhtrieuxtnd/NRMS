@@ -82,6 +82,7 @@ def run(
         show_progress=config.get("logging", {}).get("progress_bar", True),
         news_vector_cache=news_vector_cache,
     )
+    metrics["hr@10"] = _hit_rate_at_k(predictions, k=10)
 
     save_json(metrics, run_path / "artifacts" / "test_metrics.json")
     _save_predictions(predictions, run_path / "predictions" / "test_predictions.csv")
@@ -94,6 +95,22 @@ def run(
     }
     save_json(run_info, run_path / "run_info.json")
     return metrics
+
+
+def _hit_rate_at_k(predictions: list[dict[str, Any]], *, k: int) -> float:
+    if k <= 0:
+        raise ValueError("k must be greater than zero")
+
+    hits_by_impression: dict[str, bool] = {}
+    for row in predictions:
+        impression_id = str(row["impression_id"])
+        hits_by_impression.setdefault(impression_id, False)
+        if int(row["label"]) > 0 and int(row["rank"]) <= k:
+            hits_by_impression[impression_id] = True
+
+    if not hits_by_impression:
+        raise ValueError("predictions must contain at least one impression")
+    return sum(hits_by_impression.values()) / len(hits_by_impression)
 
 
 def _load_mapping(path: Path, description: str) -> dict[str, Any]:
