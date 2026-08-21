@@ -47,10 +47,7 @@ Embedding matrix được khởi tạo từ GloVe 840B 300 chiều. Chỉ các t
 
 News encoder nhận chuỗi embedding của các từ trong tiêu đề. Multi-head self-attention cho phép mỗi từ học quan hệ với các từ khác trong nhiều không gian biểu diễn:
 
-$$
-\operatorname{Attention}(\mathbf{Q},\mathbf{K},\mathbf{V})=
-\operatorname{softmax}\left(\frac{\mathbf{Q}\mathbf{K}^{T}}{\sqrt{d_k}}\right)\mathbf{V}
-$$
+$$\operatorname{Attention}(\mathbf{Q},\mathbf{K},\mathbf{V})=\operatorname{softmax}\left(\frac{\mathbf{Q}\mathbf{K}^{T}}{\sqrt{d_k}}\right)\mathbf{V}$$
 
 Đầu ra của các attention head được ghép lại. Additive attention sau đó gán trọng số cho từng từ và tổng hợp tiêu đề thành một news vector.
 
