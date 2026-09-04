@@ -270,6 +270,8 @@ Trong đó $N$ là số impression và $\mathbb{I}$ là hàm chỉ thị. HR@10 
 
 ## 6. Kết quả thực nghiệm
 
+> Chi tiết ở file [results.xlsx](./result.xlsx)
+
 ### 6.1. Quá trình huấn luyện
 
 Thực nghiệm gồm hai giai đoạn. Trước hết, các biến thể được so sánh với cùng seed 42 nhằm hạn chế ảnh hưởng của khởi tạo ngẫu nhiên trong bước sàng lọc. Hai cấu hình additive attention dimension 200 và 256 cho kết quả tốt nhất nên được giữ lại. Sau đó, mỗi cấu hình được đánh giá trên năm seed 42–46 để đo hiệu năng trung bình và độ ổn định.
@@ -295,12 +297,12 @@ Kết quả được trình bày dưới dạng trung bình $\pm$ độ lệch c
 | 200 | 0,687798 ± 0,002925 | 0,392951 ± 0,001634 | 0,376307 ± 0,001355 | 0,439426 ± 0,001999 |
 | **256** | **0,688054 ± 0,001766** | **0,397281 ± 0,000905** | **0,379605 ± 0,001597** | **0,441972 ± 0,001178** |
 
-| Additive attention dim | Test AUC | Test MRR | Test nDCG@5 | Test nDCG@10 | Test HR@10 |
-|---:|---:|---:|---:|---:|---:|
-| 200 | 0,644965 ± 0,003066 | 0,346076 ± 0,003171 | 0,325947 ± 0,003703 | 0,391001 ± 0,003094 | 0,728746 ± 0,003693 |
-| **256** | **0,645993 ± 0,002403** | **0,347000 ± 0,002244** | **0,327256 ± 0,003024** | **0,391790 ± 0,001999** | **0,728949 ± 0,001966** |
+| Additive attention dim | Test AUC | Test MRR | Test nDCG@5 | Test nDCG@10 |
+|---:|---:|---:|---:|---:|
+| 200 | 0,644965 ± 0,003066 | 0,346076 ± 0,003171 | 0,325947 ± 0,003703 | 0,391001 ± 0,003094 |
+| **256** | **0,645993 ± 0,002403** | **0,347000 ± 0,002244** | **0,327256 ± 0,003024** | **0,391790 ± 0,001999** |
 
-Additive dimension 256 có trung bình cao hơn trên cả bốn validation metric và cả năm test metric. Mức tăng test còn nhỏ: AUC tăng 0,001028, MRR tăng 0,000924, nDCG@5 tăng 0,001309, nDCG@10 tăng 0,000789 và HR@10 tăng 0,000203. Tuy nhiên, cấu hình 256 cũng có độ lệch chuẩn thấp hơn trên toàn bộ test metric, đặc biệt nDCG@10 giảm từ 0,003094 xuống 0,001999 và HR@10 giảm từ 0,003693 xuống 0,001966. Vì vậy, kết luận phù hợp là additive attention dimension 256 đạt hiệu năng trung bình nhỉnh hơn và nhìn chung ổn định hơn additive dimension 200; chưa thể khẳng định khác biệt có ý nghĩa thống kê nếu chưa thực hiện kiểm định ghép cặp theo seed.
+Additive dimension 256 có trung bình cao hơn trên cả bốn validation metric và cả năm test metric. Mức tăng test còn nhỏ: AUC tăng 0,001028, MRR tăng 0,000924, nDCG@5 tăng 0,001309, nDCG@10 tăng 0,000789 và HR@10 tăng 0,000203. Tuy nhiên, cấu hình 256 cũng có độ lệch chuẩn thấp hơn trên toàn bộ test metric, đặc biệt nDCG@10 giảm từ 0,003094 xuống 0,001999. Vì vậy, kết luận phù hợp là additive attention dimension 256 đạt hiệu năng trung bình nhỉnh hơn và nhìn chung ổn định hơn additive dimension 200; chưa thể khẳng định khác biệt có ý nghĩa thống kê nếu chưa thực hiện kiểm định ghép cặp theo seed.
 
 ## 7. Chức năng gợi ý
 
