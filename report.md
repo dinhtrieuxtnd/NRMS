@@ -1,10 +1,54 @@
 # BÁO CÁO XÂY DỰNG HỆ THỐNG GỢI Ý TIN TỨC SỬ DỤNG MÔ HÌNH NRMS
 
+## Mục lục
+
+- [Tóm tắt](#tóm-tắt)
+- [1. Giới thiệu](#1-giới-thiệu)
+- [2. Cơ sở lý thuyết](#2-cơ-sở-lý-thuyết)
+	- [2.1. Biểu diễn từ](#21-biểu-diễn-từ)
+	- [2.2. News encoder](#22-news-encoder)
+	- [2.3. User encoder](#23-user-encoder)
+	- [2.4. Tính điểm](#24-tính-điểm)
+	- [2.5. Negative sampling](#25-negative-sampling)
+- [3. Dữ liệu và tiền xử lý](#3-dữ-liệu-và-tiền-xử-lý)
+	- [3.1. Bộ dữ liệu](#31-bộ-dữ-liệu)
+	- [3.2. Chia validation và test](#32-chia-validation-và-test)
+	- [3.3. Xử lý tiêu đề](#33-xử-lý-tiêu-đề)
+	- [3.4. Embedding](#34-embedding)
+	- [3.5. Lịch sử đọc](#35-lịch-sử-đọc)
+	- [3.6. Artifact](#36-artifact)
+- [4. Thiết kế và triển khai](#4-thiết-kế-và-triển-khai)
+	- [4.1. Cấu trúc chương trình](#41-cấu-trúc-chương-trình)
+	- [4.2. Cấu hình mô hình](#42-cấu-hình-mô-hình)
+	- [4.3. Cấu hình huấn luyện](#43-cấu-hình-huấn-luyện)
+	- [4.4. Tối ưu đánh giá](#44-tối-ưu-đánh-giá)
+- [5. Phương pháp đánh giá](#5-phương-pháp-đánh-giá)
+	- [5.1. AUC](#51-auc)
+	- [5.2. MRR](#52-mrr)
+	- [5.3. nDCG@K](#53-ndcgk)
+	- [5.4. HR@10](#54-hr10)
+- [6. Kết quả thực nghiệm](#6-kết-quả-thực-nghiệm)
+	- [6.1. Quá trình huấn luyện](#61-quá-trình-huấn-luyện)
+	- [6.2. Giai đoạn 1: khảo sát biến thể với seed 42](#62-giai-đoạn-1-khảo-sát-biến-thể-với-seed-42)
+	- [6.3. Giai đoạn 2: đánh giá độ ổn định trên năm seed](#63-giai-đoạn-2-đánh-giá-độ-ổn-định-trên-năm-seed)
+- [7. Chức năng gợi ý](#7-chức-năng-gợi-ý)
+- [8. Hạn chế](#8-hạn-chế)
+	- [8.1. Mô hình](#81-mô-hình)
+	- [8.2. Pipeline suy luận](#82-pipeline-suy-luận)
+	- [8.3. Thực nghiệm](#83-thực-nghiệm)
+- [9. Hướng phát triển](#9-hướng-phát-triển)
+	- [9.1. Hỗ trợ bài mới](#91-hỗ-trợ-bài-mới)
+	- [9.2. Sử dụng subword tokenizer](#92-sử-dụng-subword-tokenizer)
+	- [9.3. Retrieval–ranking](#93-retrievalranking)
+	- [9.4. Bổ sung đặc trưng](#94-bổ-sung-đặc-trưng)
+	- [9.5. Nâng cao thực nghiệm](#95-nâng-cao-thực-nghiệm)
+- [10. Kết luận](#10-kết-luận)
+
 ## Tóm tắt
 
 Báo cáo trình bày quá trình xây dựng và đánh giá hệ thống gợi ý tin tức dựa trên mô hình **Neural News Recommendation with Multi-Head Self-Attention (NRMS)**. Hệ thống được triển khai bằng PyTorch và thực nghiệm trên bộ dữ liệu MINDsmall. Pipeline bao gồm tiền xử lý dữ liệu, xây dựng biểu diễn tiêu đề bằng GloVe, huấn luyện mô hình, lưu và khôi phục checkpoint, đánh giá trên tập validation/test và sinh danh sách gợi ý từ lịch sử đọc.
 
-Checkpoint tốt nhất tại epoch 8 đạt AUC 0,6878, MRR 0,3938, nDCG@5 0,3772 và nDCG@10 0,4403 trên validation. Trên test, mô hình đạt AUC 0,6442, MRR 0,3492, nDCG@5 0,3288, nDCG@10 0,3944 và HR@10 0,7340. Kết quả cho thấy mô hình học được sở thích người dùng và đưa ít nhất một bài relevant vào top 10 ở khoảng 73,40% impression test. Tuy nhiên, khoảng cách giữa validation và test vẫn cho thấy khả năng tổng quát hóa cần được cải thiện. Phiên bản hiện tại phù hợp với nghiên cứu offline; để triển khai thực tế cần bổ sung ingest bài mới, candidate retrieval, cache bền vững và xử lý cold-start.
+Thực nghiệm được tiến hành theo hai giai đoạn. Giai đoạn thứ nhất dùng seed 42 để khảo sát các biến thể của additive attention dimension, attention head dimension và tỷ lệ negative sampling; từ đó chọn hai cấu hình có additive attention dimension 200 và 256. Giai đoạn thứ hai đánh giá độ ổn định của hai cấu hình này trên năm seed 42–46. Trung bình trên năm seed, cấu hình 256 đạt validation nDCG@10 $0,441972\pm0,001178$ và test nDCG@10 $0,391790\pm0,001999$, cao hơn cấu hình 200 lần lượt là $0,439426\pm0,001999$ và $0,391001\pm0,003094$. Cấu hình 256 có giá trị trung bình cao hơn trên toàn bộ metric validation và test, đồng thời có độ lệch chuẩn thấp hơn trên toàn bộ test metric. Kết quả cho thấy additive attention dimension 256 nhỉnh hơn và ổn định hơn trong phạm vi năm seed được khảo sát.
 
 ## 1. Giới thiệu
 
@@ -67,7 +111,7 @@ Các bài có điểm cao hơn được xếp ở vị trí cao hơn.
 
 ### 2.5. Negative sampling
 
-Trong mỗi impression train, bài được nhấp là positive và bài không được nhấp là negative. Mỗi mẫu huấn luyện gồm một positive và bốn negative được lấy từ cùng impression.
+Trong mỗi impression train, bài được nhấp là positive và bài không được nhấp là negative. Cấu hình chính dùng một positive và bốn negative lấy từ cùng impression. Một thí nghiệm ablation tăng số negative lên tám để đánh giá ảnh hưởng của tỷ lệ negative sampling.
 
 ## 3. Dữ liệu và tiền xử lý
 
@@ -154,15 +198,15 @@ Config, statistics, manifest, checksum và run metadata cũng được lưu đ�
 
 ### 4.2. Cấu hình mô hình
 
-| Tham số | Giá trị |
-|---|---:|
-| Embedding dimension | 300 |
-| Attention heads | 16 |
-| Head dimension | 16 |
-| News/user vector dimension | 256 |
-| Additive attention dimension | 200 |
-| Dropout | 0,2 |
-| Max history length | 50 |
+| Tham số | Hai cấu hình đánh giá độ ổn định | Biến thể khác ở giai đoạn khảo sát |
+|---|---:|---:|
+| Embedding dimension | 300 | — |
+| Attention heads | 16 | — |
+| Head dimension | 16 | 32 |
+| News/user vector dimension | 256 | 512 |
+| Additive attention dimension | 200 và 256 | 300 |
+| Dropout | 0,2 | — |
+| Max history length | 50 | — |
 
 ### 4.3. Cấu hình huấn luyện
 
@@ -173,18 +217,22 @@ Config, statistics, manifest, checksum và run metadata cũng được lưu đ�
 | News encoding batch size | 4.096 |
 | Learning rate ban đầu | 0,0002 |
 | Gradient clipping | 5,0 |
-| Epoch tối đa | 10 |
+| Weight decay | 0 |
+| Epoch tối đa | 15 |
 | Early-stopping patience | 3 |
+| Minimum delta | 0,0001 |
 | Metric theo dõi | nDCG@10 |
 | Scheduler | ReduceLROnPlateau |
 | AMP | Bật |
 | Thiết bị | CUDA |
 
-Mỗi run lưu `best.pt` và `last.pt`. Checkpoint chứa trạng thái model, optimizer, scheduler, epoch, metric tốt nhất, history và early stopping. Run chính sử dụng seed 42. Chế độ deterministic có hỗ trợ nhưng không được bật trong thực nghiệm này. Scheduler `ReduceLROnPlateau` dùng factor 0,5 và patience 1; learning rate cuối cùng là 0,00005.
+Mỗi run lưu `best.pt` và `last.pt`. Checkpoint chứa trạng thái model, optimizer, scheduler, epoch, metric tốt nhất, history và early stopping. Chế độ deterministic có hỗ trợ nhưng không được bật; độ ổn định được đánh giá bằng cách thay seed từ 42 đến 46. Scheduler `ReduceLROnPlateau` dùng factor 0,5, patience 1 và learning rate tối thiểu $10^{-6}$. Tùy diễn biến validation, learning rate cuối cùng của các run là 0,0001 hoặc 0,00005.
+
+Run seed 42 của cấu hình additive dimension 200 được tái sử dụng từ giai đoạn khảo sát và có giới hạn 10 epoch; các run bổ sung có giới hạn 15 epoch. Checkpoint tốt nhất của run seed 42 xuất hiện tại epoch 8 nên vẫn nằm trong giới hạn huấn luyện. Khác biệt này được giữ lại khi tổng hợp kết quả và cần được xem là một hạn chế nhỏ của thiết kế thực nghiệm.
 
 ### 4.4. Tối ưu đánh giá
 
-Mỗi bài được news encoder xử lý một lần để tạo cache vector. Run chính tạo cache 65.239 entry, bao gồm bài padding, với vector 256 chiều. Evaluation dùng cache thay vì encode lặp lại một title trong nhiều impression.
+Mỗi bài được news encoder xử lý một lần để tạo cache gồm 65.239 entry, bao gồm bài padding, với vector 256 chiều. Evaluation dùng cache thay vì encode lặp lại một title trong nhiều impression.
 
 ## 5. Phương pháp đánh giá
 
@@ -224,22 +272,35 @@ Trong đó $N$ là số impression và $\mathbb{I}$ là hàm chỉ thị. HR@10 
 
 ### 6.1. Quá trình huấn luyện
 
-Run chính hoàn thành đủ 10 epoch với trạng thái `completed`. Thời gian huấn luyện là 1.022,67 giây, tương đương khoảng 17,04 phút; tổng thời gian của run là 1.025,19 giây. Epoch 8 là checkpoint tốt nhất theo nDCG@10.
+Thực nghiệm gồm hai giai đoạn. Trước hết, các biến thể được so sánh với cùng seed 42 nhằm hạn chế ảnh hưởng của khởi tạo ngẫu nhiên trong bước sàng lọc. Hai cấu hình additive attention dimension 200 và 256 cho kết quả tốt nhất nên được giữ lại. Sau đó, mỗi cấu hình được đánh giá trên năm seed 42–46 để đo hiệu năng trung bình và độ ổn định.
 
-| Epoch | Train loss | AUC | MRR | nDCG@5 | nDCG@10 |
+### 6.2. Giai đoạn 1: khảo sát biến thể với seed 42
+
+| Biến thể | Seed | Best epoch | Val nDCG@10 | Test AUC | Test MRR | Test nDCG@5 | Test nDCG@10 | HR@10 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Additive dim 200 | 42 | 8 | 0,4403 | 0,6442 | 0,3492 | 0,3288 | **0,3944** | **0,7340** |
+| Additive dim 256 | 42 | 8 | **0,4428** | **0,6465** | **0,3499** | **0,3307** | 0,3941 | 0,7311 |
+| Additive dim 300 | 42 | 8 | 0,4396 | 0,6464 | 0,3473 | 0,3283 | 0,3927 | 0,7320 |
+| Head dim 32, additive dim 200 | 42 | 8 | 0,4403 | 0,6430 | 0,3424 | 0,3229 | 0,3881 | 0,7285 |
+| Negative sampling ratio 8 | 42 | 8 | 0,4362 | 0,6450 | 0,3463 | 0,3264 | 0,3916 | 0,7302 |
+
+Ở seed 42, additive dimension 256 đạt validation nDCG@10, test AUC, MRR và nDCG@5 cao nhất; additive dimension 200 đạt test nDCG@10 và HR@10 cao nhất. Hai cấu hình vì vậy được chọn để đánh giá tiếp trên nhiều seed. Additive dimension 300, head dimension 32 và negative sampling ratio 8 không tạo ra cải thiện đủ nhất quán để đi tiếp.
+
+### 6.3. Giai đoạn 2: đánh giá độ ổn định trên năm seed
+
+Kết quả được trình bày dưới dạng trung bình $\pm$ độ lệch chuẩn mẫu trên các seed 42–46, với $n=5$ và `ddof=1`. Metric validation được lấy tại checkpoint tốt nhất theo validation nDCG@10 của từng run.
+
+| Additive attention dim | Validation AUC | Validation MRR | Validation nDCG@5 | Validation nDCG@10 |
+|---:|---:|---:|---:|---:|
+| 200 | 0,687798 ± 0,002925 | 0,392951 ± 0,001634 | 0,376307 ± 0,001355 | 0,439426 ± 0,001999 |
+| **256** | **0,688054 ± 0,001766** | **0,397281 ± 0,000905** | **0,379605 ± 0,001597** | **0,441972 ± 0,001178** |
+
+| Additive attention dim | Test AUC | Test MRR | Test nDCG@5 | Test nDCG@10 | Test HR@10 |
 |---:|---:|---:|---:|---:|---:|
-| 1 | 1,4176 | 0,6644 | 0,3681 | 0,3512 | 0,4162 |
-| 3 | 1,3032 | 0,6815 | 0,3878 | 0,3715 | 0,4347 |
-| 6 | 1,2420 | 0,6858 | 0,3916 | 0,3743 | 0,4380 |
-| 8 | 1,2228 | **0,6878** | **0,3938** | **0,3772** | **0,4403** |
-| 10 | 1,2045 | 0,6836 | 0,3915 | 0,3744 | 0,4377 |
+| 200 | 0,644965 ± 0,003066 | 0,346076 ± 0,003171 | 0,325947 ± 0,003703 | 0,391001 ± 0,003094 | 0,728746 ± 0,003693 |
+| **256** | **0,645993 ± 0,002403** | **0,347000 ± 0,002244** | **0,327256 ± 0,003024** | **0,391790 ± 0,001999** | **0,728949 ± 0,001966** |
 
-### 6.2. Validation và test
-
-| Tập | AUC | MRR | nDCG@5 | nDCG@10 | HR@10 | Impressions |
-|---|---:|---:|---:|---:|---:|---:|
-| Validation tốt nhất (epoch 8) | 0,6878 | 0,3938 | 0,3772 | 0,4403 | — | 35.496 |
-| Test | 0,6442 | 0,3492 | 0,3288 | 0,3944 | 0,7340 | 35.442 |
+Additive dimension 256 có trung bình cao hơn trên cả bốn validation metric và cả năm test metric. Mức tăng test còn nhỏ: AUC tăng 0,001028, MRR tăng 0,000924, nDCG@5 tăng 0,001309, nDCG@10 tăng 0,000789 và HR@10 tăng 0,000203. Tuy nhiên, cấu hình 256 cũng có độ lệch chuẩn thấp hơn trên toàn bộ test metric, đặc biệt nDCG@10 giảm từ 0,003094 xuống 0,001999 và HR@10 giảm từ 0,003693 xuống 0,001966. Vì vậy, kết luận phù hợp là additive attention dimension 256 đạt hiệu năng trung bình nhỉnh hơn và nhìn chung ổn định hơn additive dimension 200; chưa thể khẳng định khác biệt có ý nghĩa thống kê nếu chưa thực hiện kiểm định ghép cặp theo seed.
 
 ## 7. Chức năng gợi ý
 
@@ -273,7 +334,8 @@ News ID phải tồn tại trong `news_title_mapping.pkl`. Chức năng hiện t
 
 ### 8.3. Thực nghiệm
 
-- Kết quả báo cáo mới dựa trên một run chính và một seed.
+- Hai cấu hình được chọn đã được đánh giá trên cùng năm seed, nhưng cỡ mẫu năm seed vẫn nhỏ và chưa có kiểm định ý nghĩa thống kê.
+- Run seed 42 của additive dimension 200 dùng giới hạn 10 epoch, trong khi các run bổ sung dùng giới hạn 15 epoch; checkpoint tốt nhất ở epoch 8 nên ảnh hưởng dự kiến nhỏ nhưng quy trình chưa hoàn toàn đồng nhất.
 - Chưa đánh giá online bằng CTR, dwell time hoặc diversity.
 
 ## 9. Hướng phát triển
@@ -301,12 +363,15 @@ Nên nghiên cứu abstract, category, entity, thời gian xuất bản, popular
 
 ### 9.5. Nâng cao thực nghiệm
 
-- chạy nhiều seed và báo cáo trung bình cùng độ lệch chuẩn;
+- mở rộng số seed ngoài 42–46 và giữ toàn bộ điều kiện huấn luyện đồng nhất;
+- bổ sung khoảng tin cậy và kiểm định ghép cặp theo seed hoặc theo từng impression;
 - đánh giá theo độ dài history và tỷ lệ OOV;
 - đo latency, memory và throughput bên cạnh ranking metrics.
 
-## 11. Kết luận
+## 10. Kết luận
 
 Dự án đã xây dựng thành công pipeline NRMS đầy đủ cho thực nghiệm offline trên MINDsmall, từ preprocessing, training, checkpoint, validation, test đến recommendation. Kiến trúc word embedding, multi-head self-attention và additive attention phù hợp với nguyên lý NRMS. Việc precompute news vector giúp giảm chi phí đánh giá lặp lại.
 
-Checkpoint tốt nhất tại epoch 8 đạt nDCG@10 0,4403 trên validation. Trên 35.442 impression test, mô hình đạt AUC 0,6442, MRR 0,3492, nDCG@5 0,3288, nDCG@10 0,3944 và HR@10 0,7340. Mô hình có khả năng đưa bài relevant vào top 10 ở phần lớn impression, nhưng khoảng cách validation–test cho thấy cần thêm thí nghiệm để cải thiện khả năng tổng quát hóa và vị trí xếp hạng của bài relevant.
+Thiết kế thực nghiệm hai giai đoạn đã sàng lọc các biến thể bằng seed 42, sau đó đánh giá độ ổn định của hai cấu hình additive attention dimension 200 và 256 trên năm seed 42–46. Cách tổng hợp này tránh kết luận dựa trên một run đơn lẻ và phản ánh rõ hơn ảnh hưởng của khởi tạo ngẫu nhiên.
+
+Additive dimension 256 đạt validation nDCG@10 trung bình $0,441972\pm0,001178$ và test nDCG@10 $0,391790\pm0,001999$, so với $0,439426\pm0,001999$ và $0,391001\pm0,003094$ của additive dimension 200. Cấu hình 256 có trung bình cao hơn trên toàn bộ metric được đánh giá và độ lệch chuẩn thấp hơn trên toàn bộ test metric. Do đó, additive attention dimension 256 là lựa chọn phù hợp hơn trong hai cấu hình, dù mức chênh lệch test còn nhỏ và cần được xác nhận bằng thêm seed hoặc kiểm định thống kê.
